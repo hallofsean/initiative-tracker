@@ -7,7 +7,7 @@ import Box from "@mui/material/Box";
 
 import SkipNextRounded from "@mui/icons-material/SkipNextRounded";
 
-import OBR, { isImage, Item } from "@owlbear-rodeo/sdk";
+import OBR, { isImage, Item, Metadata } from "@owlbear-rodeo/sdk";
 
 import { InitiativeItem } from "./InitiativeItem";
 
@@ -18,6 +18,7 @@ import { InitiativeListItem } from "./InitiativeListItem";
 import { getPluginId } from "./getPluginId";
 import { InitiativeHeader } from "./InitiativeHeader";
 import { isPlainObject } from "./isPlainObject";
+import { EscalationCounter } from "./EscalationCounter";
 
 /** Check that the item metadata is in the correct format */
 function isMetadata(
@@ -32,6 +33,7 @@ function isMetadata(
 
 export function InitiativeTracker() {
   const [initiativeItems, setInitiativeItems] = useState<InitiativeItem[]>([]);
+  const [escalationDie, setEscalationDie] = useState(0);
 
   useEffect(() => {
     const handleItemsChange = (items: Item[]) => {
@@ -55,6 +57,17 @@ export function InitiativeTracker() {
     OBR.scene.items.getItems().then(handleItemsChange);
     return OBR.scene.items.onChange(handleItemsChange);
   }, []);
+
+  useEffect(() => {
+    const handleMetadataChange = (metadata: Metadata) => {
+      if (typeof metadata[`${getPluginId("escalation")}`] === "number")
+      {
+        setEscalationDie(metadata[`${getPluginId("escalation")}`] as number);
+      }
+    }
+    OBR.scene.getMetadata().then(handleMetadataChange)
+    return OBR.scene.onMetadataChange(handleMetadataChange);
+  }, [])
 
   useEffect(() => {
     OBR.contextMenu.create({
@@ -114,6 +127,15 @@ export function InitiativeTracker() {
     );
     const nextIndex =
       (sorted.findIndex((initiative) => initiative.active) + 1) % sorted.length;
+    
+    // escalationDie.count++;
+    if ((sorted.findIndex((initiative) => initiative.active) + 1) >= sorted.length) {
+      const count = Math.min(escalationDie + 1, 6);
+      setEscalationDie(count);
+      const metadata : Metadata = {};
+      metadata[getPluginId("escalation")] = count;
+      OBR.scene.setMetadata(metadata);
+    }
 
     // Set local items immediately
     setInitiativeItems((prev) => {
@@ -175,7 +197,7 @@ export function InitiativeTracker() {
           // Set a minimum height of 64px
           const listHeight = Math.max(borderHeight, 64);
           // Set the action height to the list height + the card header height + the divider
-          OBR.action.setHeight(listHeight + 64 + 1);
+          OBR.action.setHeight(listHeight + 25 + 64 + 1);
         }
       });
       resizeObserver.observe(listRef.current);
@@ -206,6 +228,17 @@ export function InitiativeTracker() {
         }
       />
       <Box sx={{ overflowY: "auto" }}>
+        {/* {escalationDie} */}
+        <EscalationCounter
+          die={escalationDie}
+          onCountChange={(newCount) => {
+            const count = Math.max(0, Math.min(6, newCount));
+            setEscalationDie(count)
+            const metadata : Metadata = {};
+            metadata[getPluginId("escalation")] = count;
+            OBR.scene.setMetadata(metadata);
+          }}
+        />
         <List ref={listRef}>
           {initiativeItems
             .sort((a, b) => parseFloat(b.count) - parseFloat(a.count))

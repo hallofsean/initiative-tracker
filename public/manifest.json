@@ -1,11 +1,11 @@
 {
-  "name": "Initiative Tracker",
-  "version": "1.0.0",
+  "name": "13th Age Initiative Tracker",
+  "version": "0.0.1",
   "manifest_version": 1,
   "author": "Owlbear Rodeo",
   "homepage_url": "https://owlbear.app",
   "icon": "/logo.png",
-  "description": "A basic initiative tracker with a shared view for you and your players",
+  "description": "Extends basic initiative tracker with escalation die",
   "action": {
     "title": "Initiative Tracker",
     "icon": "/icon.svg",
